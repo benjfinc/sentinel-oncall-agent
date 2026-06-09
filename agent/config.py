@@ -29,8 +29,12 @@ class Settings:
     composio_api_key: str = field(default_factory=lambda: os.getenv("COMPOSIO_API_KEY", ""))
     anthropic_api_key: str = field(default_factory=lambda: os.getenv("ANTHROPIC_API_KEY", ""))
 
-    # Composio scopes external connections (GitHub/Slack/Linear) per user_id.
+    # Composio scopes external connections per user_id.
     composio_user_id: str = field(default_factory=lambda: os.getenv("COMPOSIO_USER_ID", "default"))
+    # Per-toolkit overrides — connections made under different user IDs.
+    composio_user_id_github: str = field(default_factory=lambda: os.getenv("COMPOSIO_USER_ID_GITHUB", ""))
+    composio_user_id_linear: str = field(default_factory=lambda: os.getenv("COMPOSIO_USER_ID_LINEAR", ""))
+    composio_user_id_discord: str = field(default_factory=lambda: os.getenv("COMPOSIO_USER_ID_DISCORD", ""))
 
     # --- Model (single swap point) ----------------------------------------
     # Default to a fast, reliable tool-calling model for snappy demos.

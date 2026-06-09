@@ -10,13 +10,20 @@ from .config import settings
 
 
 def discord_post(incident_id: str, step: str, text: str) -> Any:
-    """Post a message to the incident Discord channel."""
-    return execute_tool(
-        incident_id,
-        step,
-        T.DISCORD_SEND_MESSAGE,
-        {"channel_id": settings.discord_channel_id, "content": text},
-    )
+    """Post a message to the incident Discord channel. Non-fatal if not connected."""
+    if not settings.discord_channel_id:
+        return None
+    try:
+        return execute_tool(
+            incident_id,
+            step,
+            T.DISCORD_SEND_MESSAGE,
+            {"channel_id": settings.discord_channel_id, "content": text},
+        )
+    except Exception as exc:
+        from . import tracing
+        tracing.log_event(incident_id, step, "info", note=f"Discord skipped: {exc}")
+        return None
 
 
 def linear_create_issue(incident_id: str, title: str, description: str) -> dict:

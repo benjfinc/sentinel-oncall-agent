@@ -60,6 +60,18 @@ def _unwrap(result: Any) -> tuple[bool, Any]:
     return True, result
 
 
+def _user_id_for(slug: str) -> str:
+    """Return the correct Composio user ID for the given tool slug."""
+    s = slug.upper()
+    if s.startswith("GITHUB_"):
+        return settings.composio_user_id_github or settings.composio_user_id
+    if s.startswith("LINEAR_"):
+        return settings.composio_user_id_linear or settings.composio_user_id
+    if s.startswith("DISCORD"):
+        return settings.composio_user_id_discord or settings.composio_user_id
+    return settings.composio_user_id
+
+
 def execute_tool(
     incident_id: str,
     step: str,
@@ -73,6 +85,7 @@ def execute_tool(
     Returns the unwrapped data on success; raises ToolError on failure.
     """
     client = get_client()
+    user_id = _user_id_for(slug)
     attempts = (settings.tool_retries if retries is None else retries) + 1
     last_err: Any = None
 
@@ -81,7 +94,8 @@ def execute_tool(
             raw = client.tools.execute(
                 slug,
                 arguments=arguments,
-                user_id=settings.composio_user_id,
+                user_id=user_id,
+                dangerously_skip_version_check=True,
             )
             ok, data = _unwrap(raw)
             tracing.log_event(

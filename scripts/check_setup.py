@@ -89,12 +89,12 @@ def _ci():
     from agent.composio_client import execute_tool
     from agent import tool_slugs as T
     raw = execute_tool(
-        "check", "check_ci", T.GITHUB_LIST_CHECK_RUNS,
+        "check", "check_ci", T.GITHUB_LIST_CHECK_SUITES,
         {"owner": settings.repo_owner, "repo": settings.repo_name,
          "ref": settings.default_branch}
     )
-    runs = raw.get("check_runs", []) if isinstance(raw, dict) else raw or []
-    return f"Actions reachable, {len(runs)} check run(s) on HEAD"
+    suites = raw.get("check_suites", []) if isinstance(raw, dict) else raw or []
+    return f"Actions reachable, {len(suites)} check suite(s) on HEAD"
 
 
 print("\n=== Sentinel pre-flight check ===\n")
