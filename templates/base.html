@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Sentinel{% endblock %}</title>
+  <style>
+    :root {
+      --bg: #0b0e14; --panel: #141925; --panel2: #1b2130; --line: #232a3a;
+      --text: #e6e9ef; --muted: #8b94a7; --accent: #5b8cff; --green: #3fb950;
+      --red: #f85149; --amber: #d29922;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text);
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header { padding: 18px 28px; border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: 14px; }
+    header .logo { font-weight: 700; font-size: 17px; letter-spacing: .3px; }
+    header .badge { color: var(--muted); font-size: 12px; border: 1px solid var(--line);
+      padding: 2px 8px; border-radius: 999px; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 28px; }
+    .grid { display: grid; gap: 16px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+      padding: 18px 20px; }
+    h1 { font-size: 22px; margin: 0 0 6px; }
+    h2 { font-size: 15px; margin: 0 0 12px; color: var(--muted); text-transform: uppercase;
+      letter-spacing: .6px; }
+    .btn { display: inline-block; background: var(--accent); color: #fff; border: none;
+      padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
+    .btn.alt { background: var(--panel2); border: 1px solid var(--line); color: var(--text); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line);
+      vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+    code, pre { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
+    pre { background: var(--panel2); padding: 10px 12px; border-radius: 8px; overflow-x: auto;
+      margin: 0; font-size: 12px; color: #cdd3df; max-height: 240px; }
+    .pill { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .pill.resolved { background: rgba(63,185,80,.15); color: var(--green); }
+    .pill.running { background: rgba(91,140,255,.15); color: var(--accent); }
+    .pill.failed { background: rgba(248,81,73,.15); color: var(--red); }
+    .pill.awaiting_merge { background: rgba(210,153,34,.15); color: var(--amber); }
+    .kind-tool { color: var(--accent); }
+    .kind-decision { color: var(--amber); }
+    .kind-error { color: var(--red); }
+    .kind-info { color: var(--muted); }
+    .muted { color: var(--muted); }
+    .row-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .warn { background: rgba(210,153,34,.12); border: 1px solid rgba(210,153,34,.4);
+      color: var(--amber); padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="logo">🛡 Sentinel</span>
+    <span class="badge">Autonomous On-Call Agent</span>
+    <span style="flex:1"></span>
+    <a href="/">Dashboard</a>
+    <a href="/logs">Execution Logs</a>
+  </header>
+  <div class="wrap">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

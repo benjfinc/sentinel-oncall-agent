@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Sentinel — Incident {{ incident_id }}{% endblock %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <h1>Incident <code>{{ incident_id }}</code></h1>
+    {% if incident %}
+    <p>
+      <span class="pill {{ incident.status }}">{{ incident.status }}</span>
+      &nbsp; <strong>{{ incident.error_title }}</strong>
+    </p>
+    <p class="muted">Trigger: {{ incident.trigger_source }} · {{ incident.summary or "" }}</p>
+    {% endif %}
+    <p><a href="/logs">← back to all logs</a></p>
+  </div>
+
+  <div class="card">
+    <h2>Tool-call trace ({{ events | length }} events)</h2>
+    <table>
+      <thead><tr><th>#</th><th>Step</th><th>Kind</th><th>Tool / detail</th><th>OK</th></tr></thead>
+      <tbody>
+        {% for ev in events %}
+        <tr>
+          <td class="muted">{{ loop.index }}</td>
+          <td><code>{{ ev.step }}</code></td>
+          <td class="kind-{{ ev.kind }}">{{ ev.kind }}</td>
+          <td>
+            {% if ev.tool_slug %}<code>{{ ev.tool_slug }}</code><br/>{% endif %}
+            {% if ev.note %}<span class="muted">{{ ev.note }}</span>{% endif %}
+            {% if ev.request_json %}<details><summary class="muted">request</summary><pre>{{ ev.request_json }}</pre></details>{% endif %}
+            {% if ev.response_json %}<details><summary class="muted">response</summary><pre>{{ ev.response_json }}</pre></details>{% endif %}
+          </td>
+          <td>
+            {% if ev.ok == 1 %}<span style="color:var(--green)">✓</span>
+            {% elif ev.ok == 0 %}<span style="color:var(--red)">✗</span>
+            {% else %}<span class="muted">—</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

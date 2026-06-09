@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Sentinel — Execution Logs{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Execution logs</h1>
+  <p class="muted">Every incident and the autonomous actions Sentinel took. Click an ID for the full Composio tool-call trace.</p>
+  {% if incidents %}
+  <table>
+    <thead><tr><th>ID</th><th>Error</th><th>Trigger</th><th>Status</th><th>Summary</th></tr></thead>
+    <tbody>
+      {% for inc in incidents %}
+      <tr>
+        <td><a href="/logs/{{ inc.id }}"><code>{{ inc.id }}</code></a></td>
+        <td>{{ inc.error_title }}</td>
+        <td class="muted">{{ inc.trigger_source }}</td>
+        <td><span class="pill {{ inc.status }}">{{ inc.status }}</span></td>
+        <td class="muted">{{ inc.summary or "" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No incidents recorded yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

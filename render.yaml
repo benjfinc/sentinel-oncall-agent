@@ -1,0 +1,34 @@
+# Render blueprint for the Sentinel agent server.
+# Needs a public URL so Sentry can POST alerts to /incident-webhook.
+services:
+  - type: web
+    name: sentinel-oncall-agent
+    runtime: python
+    plan: free
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn agent.server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: COMPOSIO_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: COMPOSIO_USER_ID
+        value: default
+      - key: AGENT_MODEL
+        value: claude-sonnet-4-6
+      - key: TARGET_REPO_OWNER
+        sync: false
+      - key: TARGET_REPO_NAME
+        value: demo-service
+      - key: TARGET_DEFAULT_BRANCH
+        value: main
+      - key: SLACK_CHANNEL
+        value: "#incidents"
+      - key: LINEAR_TEAM_ID
+        sync: false
+      - key: AUTO_MERGE
+        value: "true"
+      - key: TRIGGER_MODE
+        value: pipeline
