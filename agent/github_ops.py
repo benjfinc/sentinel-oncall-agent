@@ -173,23 +173,45 @@ def create_pull_request(
 
 
 def wait_for_ci(incident_id: str, ref: str) -> str:
-    """Poll CI for `ref` until it concludes. Returns 'success'|'failure'|'timeout'."""
+    """Poll CI for `ref` until it concludes. Returns 'success'|'failure'|'timeout'.
+
+    Uses the combined commit status endpoint which returns a simple
+    state: 'success' | 'failure' | 'error' | 'pending'.
+    Falls back to checking check suites if combined status is pending with no statuses.
+    """
     for attempt in range(1, settings.ci_poll_max_attempts + 1):
         raw = execute_tool(
             incident_id,
             "poll_ci",
-            T.GITHUB_LIST_CHECK_RUNS,
+            T.GITHUB_GET_COMBINED_STATUS,
             {**_owner_repo(), "ref": ref},
         )
-        runs = _dig(raw, "check_runs", default=[]) or []
-        if runs:
-            statuses = [r.get("status") for r in runs if isinstance(r, dict)]
-            conclusions = [r.get("conclusion") for r in runs if isinstance(r, dict)]
-            if all(s == "completed" for s in statuses) and statuses:
-                if all(c == "success" for c in conclusions):
-                    return "success"
-                if any(c in {"failure", "timed_out", "cancelled"} for c in conclusions):
-                    return "failure"
+        state = _dig(raw, "state", default="pending") or "pending"
+        total = _dig(raw, "total_count", default=0) or 0
+
+        if state == "success":
+            return "success"
+        if state in {"failure", "error"}:
+            return "failure"
+
+        # If no commit statuses yet, check GitHub Actions check suites directly
+        if total == 0 and attempt > 2:
+            suite_raw = execute_tool(
+                incident_id,
+                "poll_ci_suites",
+                T.GITHUB_LIST_CHECK_SUITES,
+                {**_owner_repo(), "ref": ref},
+            )
+            suites = _dig(suite_raw, "check_suites", default=[]) or []
+            if suites:
+                conclusions = [s.get("conclusion") for s in suites if isinstance(s, dict)]
+                statuses = [s.get("status") for s in suites if isinstance(s, dict)]
+                if all(s == "completed" for s in statuses) and statuses:
+                    if all(c == "success" for c in conclusions):
+                        return "success"
+                    if any(c in {"failure", "timed_out", "cancelled", "action_required"} for c in conclusions):
+                        return "failure"
+
         time.sleep(settings.ci_poll_seconds)
     return "timeout"
 

@@ -1,4 +1,4 @@
-"""Slack and Linear actions, backed by Composio tools."""
+"""Discord and Linear actions, backed by Composio tools."""
 
 from __future__ import annotations
 
@@ -9,13 +9,13 @@ from .composio_client import execute_tool
 from .config import settings
 
 
-def slack_post(incident_id: str, step: str, text: str) -> Any:
-    """Post a message to the incident Slack channel."""
+def discord_post(incident_id: str, step: str, text: str) -> Any:
+    """Post a message to the incident Discord channel."""
     return execute_tool(
         incident_id,
         step,
-        T.SLACK_SEND_MESSAGE,
-        {"channel": settings.slack_channel, "text": text},
+        T.DISCORD_SEND_MESSAGE,
+        {"channel_id": settings.discord_channel_id, "content": text},
     )
 
 

@@ -46,8 +46,9 @@ class Settings:
     default_branch: str = field(default_factory=lambda: os.getenv("TARGET_DEFAULT_BRANCH", "main"))
     commit_scan_limit: int = field(default_factory=lambda: int(os.getenv("COMMIT_SCAN_LIMIT", "10")))
 
-    # --- Slack / Linear ----------------------------------------------------
-    slack_channel: str = field(default_factory=lambda: os.getenv("SLACK_CHANNEL", "#incidents"))
+    # --- Discord / Linear --------------------------------------------------
+    # Discord channel ID (right-click channel in Discord → Copy Channel ID).
+    discord_channel_id: str = field(default_factory=lambda: os.getenv("DISCORD_CHANNEL_ID", ""))
     linear_team_id: str = field(default_factory=lambda: os.getenv("LINEAR_TEAM_ID", ""))
 
     # --- CI polling --------------------------------------------------------
@@ -74,6 +75,8 @@ class Settings:
             problems.append("ANTHROPIC_API_KEY is not set")
         if not self.repo_owner or not self.repo_name:
             problems.append("TARGET_REPO_OWNER / TARGET_REPO_NAME are not set")
+        if not self.discord_channel_id:
+            problems.append("DISCORD_CHANNEL_ID is not set")
         if not self.linear_team_id:
             problems.append("LINEAR_TEAM_ID is not set (needed to create follow-up tickets)")
         return problems

@@ -21,14 +21,14 @@ EXPECTED = [
     T.GITHUB_LIST_COMMITS, T.GITHUB_GET_COMMIT, T.GITHUB_GET_REF, T.GITHUB_CREATE_REF,
     T.GITHUB_GET_CONTENT, T.GITHUB_UPSERT_FILE, T.GITHUB_CREATE_PR,
     T.GITHUB_LIST_CHECK_RUNS, T.GITHUB_GET_COMBINED_STATUS, T.GITHUB_MERGE_PR,
-    T.SLACK_SEND_MESSAGE, T.LINEAR_CREATE_ISSUE,
+    T.DISCORD_SEND_MESSAGE, T.LINEAR_CREATE_ISSUE,
 ]
 
 
 def _available_slugs() -> set[str]:
     client = get_client()
     slugs: set[str] = set()
-    for toolkit in T.TOOLKITS:
+    for toolkit in ["github", "discordbot", "linear"]:
         try:
             tools = client.tools.get(user_id=settings.composio_user_id, toolkits=[toolkit])
         except Exception as exc:
@@ -53,14 +53,14 @@ def main() -> None:
     ok = True
     for slug in EXPECTED:
         if slug in available:
-            print(f"  ✓ {slug}")
+            print(f"  OK  {slug}")
         else:
             ok = False
             close = difflib.get_close_matches(slug, available, n=3, cutoff=0.4)
-            hint = f"  → did you mean: {', '.join(close)}" if close else "  → no close match found"
-            print(f"  ✗ {slug}\n{hint}")
+            hint = f"  -> did you mean: {', '.join(close)}" if close else "  -> no close match found"
+            print(f"  FAIL  {slug}\n{hint}")
 
-    print("\nAll good — slugs match." if ok else
+    print("\nAll good - slugs match." if ok else
           "\nSome slugs need updating in agent/tool_slugs.py (see suggestions above).")
 
 

@@ -23,7 +23,7 @@ service on the GitHub repo {repo} just started throwing errors. Resolve the
 incident end to end WITHOUT asking for human approval.
 
 Do this:
-1. Post to the Slack channel {channel} that you are investigating.
+1. Post to Discord channel ID {channel} that you are investigating.
 2. List the {limit} most recent commits on `{branch}`.
 3. Identify the single commit most likely to have caused the error (use commit
    messages and changed files). Briefly state your reasoning in Slack.
@@ -49,7 +49,7 @@ def run_incident_agentic(error_title: str, error_detail: str = "") -> dict:
 
     system = SYSTEM.format(
         repo=settings.repo_full_name(),
-        channel=settings.slack_channel,
+        channel=settings.discord_channel_id,
         branch=settings.default_branch,
         limit=settings.commit_scan_limit,
         team=settings.linear_team_id,

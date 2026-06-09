@@ -58,17 +58,17 @@ def _github():
     count = len(commits) if isinstance(commits, list) else "?"
     return f"repo accessible, got {count} commit(s)"
 
-# 4. Composio + Slack: verify channel accessible
-def _slack():
+# 4. Composio + Discord: verify channel accessible
+def _discord():
     from agent.config import settings
     from agent.composio_client import execute_tool
     from agent import tool_slugs as T
     execute_tool(
-        "check", "check_slack", T.SLACK_SEND_MESSAGE,
-        {"channel": settings.slack_channel,
-         "text": ":white_check_mark: Sentinel pre-flight check — Slack connection OK."}
+        "check", "check_discord", T.DISCORD_SEND_MESSAGE,
+        {"channel_id": settings.discord_channel_id,
+         "content": "✅ Sentinel pre-flight check — Discord connection OK."}
     )
-    return f"posted to {settings.slack_channel}"
+    return f"posted to channel {settings.discord_channel_id}"
 
 # 5. Composio + Linear: team accessible
 def _linear():
@@ -101,7 +101,7 @@ print("\n=== Sentinel pre-flight check ===\n")
 check("Config (.env)", _config)
 check("Anthropic API (model reachable)", _anthropic)
 check("Composio → GitHub (list commits)", _github)
-check("Composio → Slack (post message)", _slack)
+check("Composio → Discord (post message)", _discord)
 check("Composio → Linear (create issue)", _linear)
 check("GitHub Actions (CI reachable)", _ci)
 

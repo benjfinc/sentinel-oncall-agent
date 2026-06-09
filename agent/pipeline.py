@@ -58,10 +58,10 @@ def run_incident(
 
     try:
         # 1. Acknowledge ---------------------------------------------------
-        integrations.slack_post(
+        integrations.discord_post(
             incident_id,
             "ack",
-            f":rotating_light: *Sentinel*: detected production errors "
+            f"🚨 **Sentinel**: detected production errors "
             f"(`{error_title}`) on `{settings.repo_full_name()}`. Investigating…",
         )
 
@@ -90,10 +90,10 @@ def run_incident(
             "",
         )
 
-        integrations.slack_post(
+        integrations.discord_post(
             incident_id,
             "diagnosis",
-            f":mag: Likely cause: commit `{decision.culprit_sha[:7]}` "
+            f"🔍 Likely cause: commit `{decision.culprit_sha[:7]}` "
             f"touching `{decision.file_path}`.\n> {decision.reasoning}\n"
             f"Preparing a revert PR…",
         )
@@ -144,10 +144,10 @@ def run_incident(
         ci_ref = pr.get("head_sha") or fix_branch
         ci_result = gh.wait_for_ci(incident_id, ci_ref)
         result.ci_result = ci_result
-        integrations.slack_post(
+        integrations.discord_post(
             incident_id,
             "ci_status",
-            f":test_tube: CI on revert PR #{result.pr_number}: *{ci_result}*.",
+            f"🧪 CI on revert PR #{result.pr_number}: **{ci_result}**.",
         )
         if ci_result != "success":
             raise RuntimeError(f"CI did not pass (result={ci_result}); not merging")
@@ -175,7 +175,7 @@ def run_incident(
             branch=branch,
             duration=duration,
         )
-        integrations.slack_post(incident_id, "postmortem", f":white_check_mark: *Resolved*\n{postmortem}")
+        integrations.discord_post(incident_id, "postmortem", f"✅ **Resolved**\n{postmortem}")
 
         # 8. Linear follow-up ---------------------------------------------
         linear = integrations.linear_create_issue(
@@ -208,10 +208,10 @@ def run_incident(
         result.summary = str(exc)
         tracing.log_event(incident_id, "pipeline", "error", response=str(exc), ok=False)
         try:
-            integrations.slack_post(
+            integrations.discord_post(
                 incident_id,
                 "failure",
-                f":warning: Sentinel could not auto-resolve `{error_title}`: {exc}. "
+                f"⚠️ Sentinel could not auto-resolve `{error_title}`: {exc}. "
                 f"Escalating to a human.",
             )
         except Exception:
