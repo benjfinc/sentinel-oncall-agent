@@ -96,19 +96,42 @@ def get_commit_parent(incident_id: str, sha: str) -> str:
 
 
 def get_file(incident_id: str, path: str, ref: str) -> tuple[str, str]:
-    """Return (decoded_text, blob_sha) for a file at a given ref."""
+    """Return (decoded_text, blob_sha) for a file at a given ref.
+
+    Composio wraps GitHub's file response as:
+      { data: { content: { content: "<base64>", sha: "...", ... } } }
+    We try multiple nesting levels to be resilient to version changes.
+    """
     raw = execute_tool(
         incident_id,
         "get_content",
         T.GITHUB_GET_CONTENT,
         {**_owner_repo(), "path": path, "ref": ref},
     )
-    content_b64 = _dig(raw, "content", default="")
-    blob_sha = _dig(raw, "sha", default="")
+    # Try nested: data -> content -> content (Composio v1.0 shape)
+    file_obj = None
+    if isinstance(raw, dict):
+        data = raw.get("data", raw)
+        if isinstance(data, dict):
+            inner = data.get("content", data)
+            if isinstance(inner, dict) and "content" in inner:
+                file_obj = inner           # { content: b64, sha: ..., ... }
+            elif isinstance(inner, str):
+                file_obj = data            # data itself has content string
+            else:
+                file_obj = data
+
+    content_b64 = ""
+    blob_sha = ""
+    if isinstance(file_obj, dict):
+        content_b64 = file_obj.get("content", "")
+        blob_sha = file_obj.get("sha", "")
+
     text = ""
-    if content_b64:
+    if content_b64 and isinstance(content_b64, str):
         try:
-            text = base64.b64decode(content_b64).decode("utf-8")
+            # GitHub embeds newlines in base64 — strip them before decoding
+            text = base64.b64decode(content_b64.replace("\n", "")).decode("utf-8")
         except Exception:
             text = ""
     return text, blob_sha
@@ -175,42 +198,48 @@ def create_pull_request(
 def wait_for_ci(incident_id: str, ref: str) -> str:
     """Poll CI for `ref` until it concludes. Returns 'success'|'failure'|'timeout'.
 
-    Uses the combined commit status endpoint which returns a simple
-    state: 'success' | 'failure' | 'error' | 'pending'.
-    Falls back to checking check suites if combined status is pending with no statuses.
+    GitHub Actions does NOT set commit statuses — it uses check suites.  We
+    therefore query check suites directly and look only at the suite belonging
+    to the 'GitHub Actions' app.  Third-party suites (Cursor, Vercel, etc.)
+    are ignored because they may never transition out of 'queued'.
     """
     for attempt in range(1, settings.ci_poll_max_attempts + 1):
-        raw = execute_tool(
+        # Primary path: check suites filtered to GitHub Actions
+        suite_raw = execute_tool(
+            incident_id,
+            "poll_ci_suites",
+            T.GITHUB_LIST_CHECK_SUITES,
+            {**_owner_repo(), "ref": ref},
+        )
+        suites = _dig(suite_raw, "check_suites", default=[]) or []
+        if isinstance(suites, list) and suites:
+            actions_suites = [
+                s for s in suites
+                if isinstance(s, dict)
+                and isinstance(s.get("app"), dict)
+                and "GitHub Actions" in s["app"].get("name", "")
+            ]
+            if actions_suites:
+                # All GitHub Actions suites completed → decide
+                all_done = all(s.get("status") == "completed" for s in actions_suites)
+                if all_done:
+                    if all(s.get("conclusion") == "success" for s in actions_suites):
+                        return "success"
+                    return "failure"
+                # At least one not done yet — keep polling
+
+        # Fallback: combined commit status (older repos / non-Actions CI)
+        cs_raw = execute_tool(
             incident_id,
             "poll_ci",
             T.GITHUB_GET_COMBINED_STATUS,
             {**_owner_repo(), "ref": ref},
         )
-        state = _dig(raw, "state", default="pending") or "pending"
-        total = _dig(raw, "total_count", default=0) or 0
-
+        state = _dig(cs_raw, "state", default="pending") or "pending"
         if state == "success":
             return "success"
         if state in {"failure", "error"}:
             return "failure"
-
-        # If no commit statuses yet, check GitHub Actions check suites directly
-        if total == 0 and attempt > 2:
-            suite_raw = execute_tool(
-                incident_id,
-                "poll_ci_suites",
-                T.GITHUB_LIST_CHECK_SUITES,
-                {**_owner_repo(), "ref": ref},
-            )
-            suites = _dig(suite_raw, "check_suites", default=[]) or []
-            if suites:
-                conclusions = [s.get("conclusion") for s in suites if isinstance(s, dict)]
-                statuses = [s.get("status") for s in suites if isinstance(s, dict)]
-                if all(s == "completed" for s in statuses) and statuses:
-                    if all(c == "success" for c in conclusions):
-                        return "success"
-                    if any(c in {"failure", "timed_out", "cancelled", "action_required"} for c in conclusions):
-                        return "failure"
 
         time.sleep(settings.ci_poll_seconds)
     return "timeout"

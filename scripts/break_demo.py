@@ -20,6 +20,7 @@ from scripts._demo_content import BROKEN_LOGIC, DEMO_FILE_PATH
 
 def _current_blob_sha() -> str:
     client = get_client()
+    user_id = settings.composio_user_id_github or settings.composio_user_id
     res = client.tools.execute(
         T.GITHUB_GET_CONTENT,
         arguments={
@@ -28,7 +29,8 @@ def _current_blob_sha() -> str:
             "path": DEMO_FILE_PATH,
             "ref": settings.default_branch,
         },
-        user_id=settings.composio_user_id,
+        user_id=user_id,
+        dangerously_skip_version_check=True,
     )
     data = res.get("data", res) if isinstance(res, dict) else {}
     return data.get("sha", "") if isinstance(data, dict) else ""
@@ -52,7 +54,7 @@ def main() -> None:
     if blob_sha:
         args["sha"] = blob_sha
 
-    execute_tool("setup-break", "break_demo", T.GITHUB_UPSERT_FILE, args)
+    execute_tool("setup-break", "break_demo", T.GITHUB_UPSERT_FILE, args, retries=1)
     print(f"💥 Broke {settings.repo_full_name()}:{DEMO_FILE_PATH} on '{settings.default_branch}'.")
     print("   CI will go red and /compute will 500. Trigger Sentinel now.")
 

@@ -19,6 +19,7 @@ from scripts._demo_content import DEMO_FILE_PATH, HEALTHY_LOGIC
 
 def _current_blob_sha() -> str:
     client = get_client()
+    user_id = settings.composio_user_id_github or settings.composio_user_id
     res = client.tools.execute(
         T.GITHUB_GET_CONTENT,
         arguments={
@@ -27,7 +28,8 @@ def _current_blob_sha() -> str:
             "path": DEMO_FILE_PATH,
             "ref": settings.default_branch,
         },
-        user_id=settings.composio_user_id,
+        user_id=user_id,
+        dangerously_skip_version_check=True,
     )
     data = res.get("data", res) if isinstance(res, dict) else {}
     return data.get("sha", "") if isinstance(data, dict) else ""
